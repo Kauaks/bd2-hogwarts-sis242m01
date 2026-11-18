@@ -268,26 +268,61 @@ UPDATE produto SET preco = preco * 0.80 WHERE loja = 'Dedosdemel';
 -- 3. REMOÇÃO DE DADOS (DELETE) E TESTES DE RESTRIÇÕES
 -- =====================================================================
 -- Questão 13
--- Erro:
--- Explicação:
+-- DELETE FROM casa WHERE nome_casa = 'Sonserina';
+-- Erro: Error Code: 1451. Cannot delete or update a parent row: a foreign
+--       key constraint fails (`hogwarts`.`aluno`, CONSTRAINT `aluno_ibfk_1`
+--       FOREIGN KEY (`id_casa`) REFERENCES `casa` (`id_casa`))
+-- Explicação: a casa Sonserina é referenciada por alunos e por um professor
+--             (diretor). A chave estrangeira impede excluir a linha "pai"
+--             enquanto existirem linhas "filhas" apontando para ela, para
+--             não deixar registros órfãos.
 
 -- Questão 14
--- Erro:
--- Explicação:
+-- INSERT INTO aluno (nome, ano_escolar, id_casa, saldo_galeoes, email)
+-- VALUES ('Dobby', 8, 1, 0, 'dobby@hogwarts.edu');
+-- Erro: Error Code: 3819. Check constraint 'aluno_chk_1' is violated.
+-- Explicação: o CHECK exige ano_escolar entre 1 e 7; o valor 8 viola a
+--             regra, então o banco recusa o INSERT.
 
 -- Questão 15
--- Erro:
--- Explicação:
+-- INSERT INTO aluno (nome, ano_escolar, id_casa, saldo_galeoes, email)
+-- VALUES ('Harry Potter (Polissuco)', 5, 1, 0, 'harry.potter@hogwarts.edu');
+-- Erro: Error Code: 1062. Duplicate entry 'harry.potter@hogwarts.edu' for
+--       key 'aluno.uq_aluno_email'
+-- Explicação: a restrição UNIQUE uq_aluno_email não permite dois alunos com
+--             o mesmo e-mail, e o Harry verdadeiro já usa esse endereço.
 
 -- Questão 16
--- Erro:
--- Explicação:
+-- DELETE FROM professor WHERE nome = 'Severo Snape';
+-- Erro: Error Code: 1451. Cannot delete or update a parent row: a foreign
+--       key constraint fails (`hogwarts`.`disciplina`, CONSTRAINT
+--       `disciplina_ibfk_1` FOREIGN KEY (`id_prof`) REFERENCES `professor`
+--       (`id_prof`))
+-- Explicação: Snape ministra Poções, ou seja, existe uma disciplina que
+--             referencia o id dele. A FK bloqueia a exclusão.
 
 -- Questão 17
+DELETE FROM professor WHERE nome = 'Gilderoy Lockhart';
+-- Por que este funciona e o anterior não: Lockhart não é referenciado por
+-- nenhuma outra tabela (não ministra disciplina, não dirige casa e não tem
+-- registros de pontos), então nenhuma FK é violada. Snape é referenciado
+-- pela disciplina Poções.
 
 -- Questão 18
+DELETE FROM matricula
+WHERE id_aluno IN (SELECT id_aluno FROM aluno WHERE nome = 'Vicente Crabbe');
+
+DELETE FROM aluno WHERE nome = 'Vicente Crabbe';
 
 -- Questão 19
+DELETE FROM disciplina
+WHERE id_disc NOT IN (SELECT id_disc FROM matricula);
+
+-- Confira: 8 professores, 13 alunos, 8 disciplinas e 33 matrículas
+SELECT (SELECT COUNT(*) FROM professor)  AS professores,
+       (SELECT COUNT(*) FROM aluno)      AS alunos,
+       (SELECT COUNT(*) FROM disciplina) AS disciplinas,
+       (SELECT COUNT(*) FROM matricula)  AS matriculas;
 
 
 -- =====================================================================
